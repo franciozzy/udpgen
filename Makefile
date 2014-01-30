@@ -14,4 +14,4 @@ udprx: udprx.o udp.o
 	$(CC) $(CFLAGS_OBJS) -o $@ $<
 
 clean:
-	rm -f udprx.o udptx.o udp.o
+	rm -f udprx.o udptx.o udp.o udprx udptx
