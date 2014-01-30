@@ -55,17 +55,29 @@ void sigterm_h(int signal){
 int main(int argc, char **argv){
     // Local variables
     struct sockaddr_in our_addr;
+    void               *buf  = NULL;
+    int                bufsz = sizeof(udpdata_t);
     int                sock  = -1;
     unsigned int       slen  = 0;
     int                err   = 0;
     int                i;
 
     // Parse parameters
-    while ((i = getopt(argc, argv, "n:")) != -1){
+    while ((i = getopt(argc, argv, "n:s:")) != -1){
         switch(i){
         case 'n': // Number of packets
             npkts = atoi(optarg);
             break;
+
+        case 's': // Payload size
+            bufsz = atoi(optarg);
+            if (bufsz < sizeof(udpdata_t)){
+                fprintf(stderr, "Payload size must be at least %lu bytes\n",
+                        sizeof(udpdata_t));
+                goto err;
+            }
+            break;
+
         default:
             usage(argv[0]);
             goto err;
@@ -76,6 +88,10 @@ int main(int argc, char **argv){
     if ((udpdata = (udpdata_t *)calloc(npkts, sizeof(*udpdata))) == NULL)
     {
         perror("calloc");
+        goto err;
+    }
+    if ((buf = malloc(bufsz)) == NULL){
+        perror("malloc");
         goto err;
     }
 
@@ -100,15 +116,16 @@ int main(int argc, char **argv){
     // Receive packets
     for (i=0; i<npkts; i++){
         slen = sizeof(struct sockaddr);
-        err = recvfrom(sock, &udpdata[i], sizeof(udpdata_t), 0, (struct sockaddr *)&our_addr, &slen);
+        err = recvfrom(sock, buf, bufsz, 0, (struct sockaddr *)&our_addr, &slen);
         if (err < 0){
             perror("recvfrom");
             goto err;
         } else
-        if (err != sizeof(udpdata_t)){
+        if (err != bufsz){
             fprintf(stderr, "Received unknown packet.\n");
             goto err;
         }
+        memcpy(&udpdata[i], buf, sizeof(udpdata_t));
         udpdata[i].tscrx = rdtsc();
     }
 
@@ -118,6 +135,8 @@ int main(int argc, char **argv){
 out:
     if (sock >= 0)
         close(sock);
+    if (buf)
+        free(buf);
 
     // Return
     return(err);

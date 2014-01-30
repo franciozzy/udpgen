@@ -35,7 +35,8 @@ int main(int argc, char **argv){
     // Local variables
     struct in_addr     dst_ip;
     struct sockaddr_in dst_sock;
-    udpdata_t          udpdata;
+    void               *buf  = NULL;
+    int                bufsz = sizeof(udpdata_t);
     int                seq   = 0;
     int                sock  = -1;
     int                npkts = 1;
@@ -43,11 +44,21 @@ int main(int argc, char **argv){
     int                i;
 
     // Parse parameters
-    while ((i = getopt(argc, argv, "n:")) != -1){
+    while ((i = getopt(argc, argv, "n:s:")) != -1){
         switch(i){
         case 'n': // Number of packets
             npkts = atoi(optarg);
             break;
+
+        case 's': // Payload size
+            bufsz = atoi(optarg);
+            if (bufsz < sizeof(udpdata_t)){
+                fprintf(stderr, "Payload size must be at least %lu bytes\n",
+                        sizeof(udpdata_t));
+                goto err;
+            }
+            break;
+
         default:
             usage(argv[0]);
             goto err;
@@ -63,6 +74,12 @@ int main(int argc, char **argv){
     }
     printf("Sending to: %s\n", inet_ntoa(dst_ip));
 
+    // Allocate sending buffer
+    if ((buf = malloc(bufsz)) == NULL){
+        perror("malloc");
+        goto err;
+    }
+
     // Setup UDP socket
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
         perror("socket");
@@ -76,10 +93,10 @@ int main(int argc, char **argv){
     dst_sock.sin_port = htons(UDPPORT);
 
     for (i=0; i<npkts; i++){
-        udpdata.seq   = seq++;
-        udpdata.tsctx = rdtsc();
+        ((udpdata_t *)buf)->seq   = seq++;
+        ((udpdata_t *)buf)->tsctx = rdtsc();
 
-        if (sendto(sock, &udpdata, sizeof(udpdata_t), 0, (struct sockaddr *)&dst_sock, sizeof(dst_sock)) < 0){
+        if (sendto(sock, buf, bufsz, 0, (struct sockaddr *)&dst_sock, sizeof(dst_sock)) < 0){
             perror("sendto");
             fprintf(stderr, "Error sending UDP packet.\n");
             goto err;
@@ -87,6 +104,9 @@ int main(int argc, char **argv){
     }
 
 out:
+    if (buf)
+        free(buf);
+
     if (sock >= 0)
         close(sock);
 
