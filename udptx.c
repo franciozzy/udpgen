@@ -56,8 +56,8 @@ int main(int argc, char **argv){
     dst_sock.sin_port = htons(UDPPORT);
 
     for (i=0; i<npkts; i++){
-        udpdata.seq = seq++;
-        udpdata.tsc = rdtsc();
+        udpdata.seq   = seq++;
+        udpdata.tsctx = rdtsc();
 
         if (sendto(sock, &udpdata, sizeof(udpdata_t), 0, (struct sockaddr *)&dst_sock, sizeof(dst_sock)) < 0){
             perror("sendto");
