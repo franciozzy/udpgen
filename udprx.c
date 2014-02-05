@@ -43,7 +43,7 @@ void dump(void){
     for (i=0; i<npkts; i++){
         printf("%5u %llu %llu (%llu) %llu\n", udpdata[i].seq, udpdata[i].tsctx,
                udpdata[i].tscrx, udpdata[i].tscrx-udpdata[i].tsctx,
-               (udpdata[i].tscrx-udpdata[i].tsctx)*1000000000/hz);
+               (udpdata[i].tscrx-udpdata[i].tsctx)*1000000/hz);
     }
 }
 
