@@ -60,11 +60,11 @@ void dump(void){
         tput_mbs = (npkts - total_pkts_dropped) * bufsz /
             ((udpdata[last_recv_pkt].tscrx - udpdata[0].tsctx)/hz) /
             1000000.0;
-        fprintf(stderr, "Average throughput: %.0f MB/s = %.2f Gbit/s\n",
-                tput_mbs, tput_mbs * 8 / 1000);
     } else {
-        fprintf(stderr, "Average throughput: 0 MB/s = 0 Gbit/s\n");
+        tput_mbs = 0.0;
     }
+    fprintf(stderr, "Average throughput: %.0f MB/s = %.2f Gbit/s\n",
+            tput_mbs, tput_mbs * 8 / 1000);
 
     // Print number of dropped packets
     fprintf(stderr, "Dropped packets: %d of %d (%.1f%%)\n",
