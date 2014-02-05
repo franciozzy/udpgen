@@ -101,7 +101,7 @@ void sigterm_h(int signal){
 
 void sigalrm_h(int signal){
     if (!ignore_sigalrm) {
-        fprintf(stderr, "Warning: Did not receive all packets after %u seconds\n", toler_sec);
+        fprintf(stderr, "Warning: Received no further packets in %u seconds\n", toler_sec);
         dump();
         exit(0);
     }
@@ -117,7 +117,7 @@ int main(int argc, char **argv){
     int                i;
 
     // Parse parameters
-    while ((i = getopt(argc, argv, "n:s:")) != -1){
+    while ((i = getopt(argc, argv, "n:s:t:")) != -1){
         switch(i){
         case 'n': // Number of packets
             npkts = atoi(optarg);
@@ -131,6 +131,10 @@ int main(int argc, char **argv){
                 goto err;
             }
             break;
+
+	case 't': // Tolerance timer duration
+	    toler_sec = atoi(optarg);
+	    break;
 
         default:
             usage(argv[0]);
