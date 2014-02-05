@@ -27,14 +27,35 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #include "udp.h"
 
 udpdata_t *udpdata;
 int       npkts = 1;
 int       bufsz = sizeof(udpdata_t);
+int       toler_sec = 2; /* number of seconds to wait for each packet */
+int       ignore_sigalrm = 0;
+struct itimerval itv;
 
 void usage(char *argv0){
     fprintf(stderr, "RTFSC\n");
+}
+
+void timer_disable() {
+    ignore_sigalrm = 1;
+}
+
+void timer_reset() {
+    if (setitimer(ITIMER_REAL, &itv, NULL))
+        perror("setitimer");
+}
+
+void timer_init() {
+    struct timeval tv;
+    tv.tv_sec  = toler_sec;
+    tv.tv_usec = 0;
+    itv.it_value    = tv;
+    itv.it_interval = tv;
 }
 
 void dump(void){
@@ -43,6 +64,8 @@ void dump(void){
     int                last_recv_pkt = -1;
     int                total_pkts_dropped = npkts;
     float              tput_mbs;
+
+    timer_disable();
 
     for (i=0; i<npkts; i++){
         printf("%5u %llu %llu (%llu) %llu\n", udpdata[i].seq, udpdata[i].tsctx,
@@ -76,6 +99,14 @@ void sigterm_h(int signal){
    exit(0);
 }
 
+void sigalrm_h(int signal){
+    if (!ignore_sigalrm) {
+        fprintf(stderr, "Warning: Did not receive all packets after %u seconds\n", toler_sec);
+        dump();
+        exit(0);
+    }
+}
+
 int main(int argc, char **argv){
     // Local variables
     struct sockaddr_in our_addr;
@@ -107,6 +138,9 @@ int main(int argc, char **argv){
         }
     }
 
+    // Initialise timer
+    timer_init();
+
     // Allocate receive buffer
     if ((udpdata = (udpdata_t *)calloc(npkts, sizeof(*udpdata))) == NULL)
     {
@@ -120,6 +154,9 @@ int main(int argc, char **argv){
 
     // Handles kill
     signal(SIGINT, sigterm_h);
+
+    // Handles timer
+    signal(SIGALRM, sigalrm_h);
 
     // Setup UDP socket
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
@@ -150,6 +187,7 @@ int main(int argc, char **argv){
         }
         memcpy(&udpdata[i], buf, sizeof(udpdata_t));
         udpdata[i].tscrx = rdtsc();
+        timer_reset();
     }
 
     // Dump
