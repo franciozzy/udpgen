@@ -33,8 +33,9 @@
 udpdata_t *udpdata;
 int       npkts = 1;
 int       bufsz = sizeof(udpdata_t);
-int       toler_sec = 2; /* number of seconds to wait for each packet */
+int       toler_sec      = 2; /* number of seconds to wait for each packet */
 int       ignore_sigalrm = 0;
+int       suppress_dump  = 0;
 struct itimerval itv;
 
 void usage(char *argv0){
@@ -68,9 +69,10 @@ void dump(void){
     timer_disable();
 
     for (i=0; i<npkts; i++){
-        printf("%5u %llu %llu (%llu) %llu\n", udpdata[i].seq, udpdata[i].tsctx,
-               udpdata[i].tscrx, udpdata[i].tscrx-udpdata[i].tsctx,
-               (udpdata[i].tscrx-udpdata[i].tsctx)*1000000/hz);
+        if (!suppress_dump)
+            printf("%5u %llu %llu (%llu) %llu\n", udpdata[i].seq, udpdata[i].tsctx,
+                   udpdata[i].tscrx, udpdata[i].tscrx-udpdata[i].tsctx,
+                   (udpdata[i].tscrx-udpdata[i].tsctx)*1000000/hz);
 
         if(udpdata[i].tsctx != 0) {
             last_recv_pkt = i;
@@ -117,7 +119,7 @@ int main(int argc, char **argv){
     int                i;
 
     // Parse parameters
-    while ((i = getopt(argc, argv, "n:s:t:")) != -1){
+    while ((i = getopt(argc, argv, "n:s:t:q")) != -1){
         switch(i){
         case 'n': // Number of packets
             npkts = atoi(optarg);
@@ -134,6 +136,10 @@ int main(int argc, char **argv){
 
 	case 't': // Tolerance timer duration
 	    toler_sec = atoi(optarg);
+	    break;
+
+	case 'q': // Suppress per-packet output
+	    suppress_dump = 1;
 	    break;
 
         default:
