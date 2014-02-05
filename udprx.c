@@ -31,6 +31,7 @@
 
 udpdata_t *udpdata;
 int       npkts = 1;
+int       bufsz = sizeof(udpdata_t);
 
 void usage(char *argv0){
     fprintf(stderr, "RTFSC\n");
@@ -39,12 +40,35 @@ void usage(char *argv0){
 void dump(void){
     int                i;
     unsigned long long hz = get_hz();
+    int                last_recv_pkt = -1;
+    int                total_pkts_dropped = npkts;
+    float              tput_mbs;
 
     for (i=0; i<npkts; i++){
         printf("%5u %llu %llu (%llu) %llu\n", udpdata[i].seq, udpdata[i].tsctx,
                udpdata[i].tscrx, udpdata[i].tscrx-udpdata[i].tsctx,
                (udpdata[i].tscrx-udpdata[i].tsctx)*1000000/hz);
+
+        if(udpdata[i].tsctx != 0) {
+            last_recv_pkt = i;
+            --total_pkts_dropped;
+        }
     }
+
+    // Print throughput
+    if (last_recv_pkt >= 0) {
+        tput_mbs = (npkts - total_pkts_dropped) * bufsz /
+            ((udpdata[last_recv_pkt].tscrx - udpdata[0].tsctx)/hz) /
+            1000000.0;
+        fprintf(stderr, "Average throughput: %.0f MB/s = %.2f Gbit/s\n",
+                tput_mbs, tput_mbs * 8 / 1000);
+    } else {
+        fprintf(stderr, "Average throughput: 0 MB/s = 0 Gbit/s\n");
+    }
+
+    // Print number of dropped packets
+    fprintf(stderr, "Dropped packets: %d of %d (%.1f%%)\n",
+            total_pkts_dropped, npkts, total_pkts_dropped*100.0 / npkts);
 }
 
 void sigterm_h(int signal){
@@ -56,7 +80,6 @@ int main(int argc, char **argv){
     // Local variables
     struct sockaddr_in our_addr;
     void               *buf  = NULL;
-    int                bufsz = sizeof(udpdata_t);
     int                sock  = -1;
     unsigned int       slen  = 0;
     int                err   = 0;
@@ -72,7 +95,7 @@ int main(int argc, char **argv){
         case 's': // Payload size
             bufsz = atoi(optarg);
             if (bufsz < sizeof(udpdata_t)){
-                fprintf(stderr, "Payload size must be at least %lu bytes\n",
+                fprintf(stderr, "Payload size must be at least %zd bytes\n",
                         sizeof(udpdata_t));
                 goto err;
             }
