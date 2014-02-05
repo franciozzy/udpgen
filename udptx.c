@@ -53,7 +53,7 @@ int main(int argc, char **argv){
         case 's': // Payload size
             bufsz = atoi(optarg);
             if (bufsz < sizeof(udpdata_t)){
-                fprintf(stderr, "Payload size must be at least %lu bytes\n",
+                fprintf(stderr, "Payload size must be at least %zd bytes\n",
                         sizeof(udpdata_t));
                 goto err;
             }
