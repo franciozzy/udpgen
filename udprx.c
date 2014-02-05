@@ -81,7 +81,7 @@ void dump(void){
     // Print throughput
     if (last_recv_pkt >= 0) {
         tput_mbs = (npkts - total_pkts_dropped) * bufsz /
-            ((udpdata[last_recv_pkt].tscrx - udpdata[0].tsctx)/hz) /
+            ((udpdata[last_recv_pkt].tscrx - udpdata[0].tsctx)*1.0/hz) /
             1000000.0;
     } else {
         tput_mbs = 0.0;
