@@ -18,6 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef UDP_H
+#define UDP_H
+
 #define UDPPORT 41300
 
 typedef struct {
@@ -29,3 +32,5 @@ typedef struct {
 unsigned long long rdtsc();
 
 unsigned long long get_hz();
+
+#endif
