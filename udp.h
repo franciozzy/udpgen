@@ -21,12 +21,14 @@
 #ifndef UDP_H
 #define UDP_H
 
+#include <stdint.h>
+
 #define UDPPORT 41300
 
 typedef struct {
-    unsigned int       seq;
-    unsigned long long tsctx;
-    unsigned long long tscrx;
+    uint32_t seq;
+    uint64_t tsctx;
+    uint64_t tscrx;
 }__attribute__((packed)) udpdata_t;
 
 unsigned long long rdtsc();

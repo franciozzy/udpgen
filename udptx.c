@@ -37,7 +37,7 @@ int main(int argc, char **argv){
     struct sockaddr_in dst_sock;
     void               *buf  = NULL;
     int                bufsz = sizeof(udpdata_t);
-    int                seq   = 0;
+    uint32_t           seq   = 0;
     int                sock  = -1;
     int                npkts = 1;
     int                err   = 0;

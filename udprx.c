@@ -19,6 +19,7 @@
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
@@ -70,7 +71,8 @@ void dump(void){
 
     for (i=0; i<npkts; i++){
         if (!suppress_dump)
-            printf("%5u %llu %llu (%llu) %llu\n", udpdata[i].seq, udpdata[i].tsctx,
+            printf("%5u %" PRIu64 " %" PRIu64 " (%" PRIu64 ") %llu\n",
+                   udpdata[i].seq, udpdata[i].tsctx,
                    udpdata[i].tscrx, udpdata[i].tscrx-udpdata[i].tsctx,
                    (udpdata[i].tscrx-udpdata[i].tsctx)*1000000/hz);
 
