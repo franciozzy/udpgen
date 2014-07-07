@@ -10,7 +10,7 @@ udptx: udptx.o udp.o
 udprx: udprx.o udp.o
 	$(CC) $(CFLAGS_TARGET) -o $@ $^
 
-%.o: %.c
+%.o: %.c udp.h
 	$(CC) $(CFLAGS_OBJS) -o $@ $<
 
 clean:
